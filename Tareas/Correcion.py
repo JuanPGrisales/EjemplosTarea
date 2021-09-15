@@ -61,8 +61,6 @@ class curso:
         _notaTotal= (self.notaExamen*0.2) + (self.notaFinal*0.2) + (_notaTareas*0.6) # Nota total del curso
         return _notaTotal
 
-
-
 #comienzo
 gemelli = colegio()
 

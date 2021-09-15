@@ -1,0 +1,35 @@
+Un coworking desea calcular el costo de renta de sus oficinas
+El coworking presta servicios de arrendamiento de varios 
+-tipos de puestos de trabajo:
+	-Oficinas privadas de 2 a 6 personas
+	-Oficinas privadas de espacio abierto (no amobladas)
+El costo de las oficinas se determina por las propiedades 
+-de la misma:
+	-Si tiene vista al exterior cuesta 1M mas
+	-Cada puesto de trabajo cuesta 600
+	-si la oficina es de espacio abierto cuesta 1M menos
+	-cada puesto puede ser premium, ósea que incluye servicios 
+     -especiales, si el puesto es premium cuesta 200 extra
+Cada puesto de trabajo, sin importar si es oficina privada 
+-o no, tiene un costo neto para el coworking de 500, y el
+-coworking tiene un costo fijo de 10M.
+Las oficinas disponibles son las siguientes, y pueden ser 
+-adaptadas para espacio abierto o escritorios:
+	-3 oficinas de 2 personas
+	-2 oficinas de 3 personas
+	-1 oficina de 5 personas
+	-6 oficinas de 6 personas
+	-2 oficinas de 8 personas
+generar 20 empresas aleatoriamente, cada una con un capital 
+-aleatorio entre 1M y 100M, y con entre 3 a 10 empleados. 
+-En orden de creación, chequear si hay una oficina disponible 
+-para la empresa y si la empresa puede pagarla, y si la hay, 
+-asignarla, de lo contrario ignorar la empresa.
+generar un reporte para el primer mes del coworking que 
+-incluya:
+	-nombre de cada empresa
+	-Costo de cada oficina (cuanto le cuesta al coworking)
+	-Renta
+al final del reporte anunciar todos los costos de la oficina,
+-los ingresos, las ganancias y cuantas PUESTOS POTENCIALES 
+ -fueron ocupados del coworking.
