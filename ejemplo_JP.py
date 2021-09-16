@@ -1,5 +1,6 @@
 import random
 import uuid 
+import math
 
 class compañiaElectrica:
     def __init__(self, _mapaPais):
@@ -60,6 +61,7 @@ class compañiaElectrica:
 class planta:
     def __init__(self):
         self.id = uuid.uuid4()
+        self.posicion = (random.randint(0,35000), random.randint(0,35000)) #para que sirva con poligono, se debe generar punto aleatorio dentro del poligono
         self.listaIDSectoresAsistidos = [] 
         _tipos = ('HidroElectrica', 'Eolica', 'Solar')
         self.tipo = random.choice(_tipos)
@@ -90,14 +92,22 @@ class transformador:
     def __init__(self):
         self.listaEdificaciones = []
 
-
-
 class sector:
     def __init__(self):
         self.id = uuid.uuid4()
         self.listaTransformadores = []
         for i in range(random.randint(10,15)):
             self.listaTransformadores.append(transformador())
+
+    def tieneEnergia(self, _listaPlantas):
+        # saber _posicionPlanta
+        for _planta in _listaPlantas:
+            _coordenadasPlanta = _planta.posicion
+            _coordernadasSector = self.posicion
+            _diferenciaPosiciones = math.sqrt( (_coordenadasPlanta[0] - _coordernadasSector[0])**2 + (_coordenadasPlanta[1] - _coordernadasSector[1])**2 )
+            return _diferenciaPosiciones <= 2500
+        ############################
+        
 
     def energiaRecibida(self):
         #############################
@@ -176,14 +186,12 @@ class pais:
         return "{0}:${1}".format(_IDClienteMenorConsumo,_consumoMenorCliente) 
 
     def sectoresSinEnergia(self):
-        
-        #####################################
-        return
-    def clienteMayorConsumo(self):
-        
-        #####################################
-        return
-        
+        _numeroSectoresSinEnergia = 0
+        for _sector in self.listaSectores:
+            if(not _sector.tieneEnergia(self.listaPlantas)):
+                _numeroSectoresSinEnergia += 1
+        return _numeroSectoresSinEnergia
+     
 
 #comienzo
 _mapaPais = [[0,0], [0,35000], [35000,35000], [35000,0]]
