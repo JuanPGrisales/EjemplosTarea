@@ -1,4 +1,4 @@
-import uuid
+import uuid uuid.uuid4()
 import random
 
 class coworking():
