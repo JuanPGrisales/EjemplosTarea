@@ -71,7 +71,8 @@ def randomPolygon(_numberVertices):
 
 
 def kmeans(_points, _numberSectors):
-    pointsArray = np.array(_points)
+    pointsList = [[point.x,point.y] for point in _points]
+    pointsArray = np.array(pointsList)
     numberPoints = len(pointsArray)
     iterations = 3
     pointsSector = np.zeros(numberPoints)

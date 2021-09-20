@@ -2,10 +2,13 @@ import random
 import uuid 
 import math
 import polyHandler
+from shapely.geometry import Polygon, Point
+import matplotlib.pyplot as plt
 
 class compañiaElectrica:
     def __init__(self, _mapaPais):
-        self.pais = pais(_mapaPais) 
+        self.pais = pais(_mapaPais)
+        
     def generarReporte(self):
         if(self.pais == None):
             print('No existe pais')
@@ -61,21 +64,35 @@ class compañiaElectrica:
             print('La energia consumida por edificacion es de: ', _sector.energiaConsumidaEdificacion())
             print('----------------------------------------------')
 
+    def generarMapa(self):
+        for _sector in cec.pais.listaSectores:
+            x = _sector.mapaSector.exterior.coords.xy[0]
+            y = _sector.mapaSector.exterior.coords.xy[1]
+            if(_sector.tieneEnergia(cec.pais.listaPlantas)):
+                plt.fill(x, y,'g')
+            else:
+                plt.fill(x, y,'r')
+            plt.plot(x, y)
+            plt.plot(_sector.mapaSector.centroid.x, _sector.mapaSector.centroid.y, 'yo')
+        for _planta in cec.pais.listaPlantas:
+            plt.plot(_planta.posicion.x, _planta.posicion.y, 'cx')
+        plt.show()
+
 class planta:
     def __init__(self, _listaSectores, _mapaPais):
-        self.id = uuid.uuid4()
+        self.id = str(uuid.uuid4().hex)
         self.posicion = polyHandler.get_random_point_in_polygon(_mapaPais) #para que sirva con poligono, se debe generar punto aleatorio dentro del poligono
         self.listaIDSectoresAsistidos = []
         for _sector in _listaSectores:
             _coordenadasPlanta = self.posicion
-            _coordernadasSector = _sector.posicion
-            _diferenciaPosiciones = math.sqrt( (_coordenadasPlanta.x - _coordernadasSector[0])**2 + (_coordenadasPlanta.x - _coordernadasSector[1])**2 )
-            if (_diferenciaPosiciones <= 2500): # si esta a 2500 km de planta
+            _coordernadasSector = _sector.mapaSector.centroid
+            _diferenciaPosiciones = math.sqrt( (_coordenadasPlanta.x - _coordernadasSector.x)**2 + (_coordenadasPlanta.y - _coordernadasSector.y)**2 )
+            if (_diferenciaPosiciones <= 25): # si esta a 2500 km de planta
                 self.listaIDSectoresAsistidos.append(_sector.id) # agregar id sector a lista id sectores asistidos
         _tipos = ('HidroElectrica', 'Eolica', 'Solar')
         self.tipo = random.choice(_tipos)
     
-    def cantidadSectores(self):
+    def cantidadSectoresAsistidos(self):
         _numeroSectoresAsistidos = len(self.listaIDSectoresAsistidos)
         return _numeroSectoresAsistidos
 
@@ -94,54 +111,57 @@ class planta:
         for _IDSectorAsistido in self.listaIDSectoresAsistidos:
             _posicionSectorAsistido = -1
             for _posicionSector, _sector in enumerate(_pais.listaSectores): 
-                if _sector.id == _IDSectorAsistido:
+                if (_sector.id == _IDSectorAsistido):
                     _posicionSectorAsistido = _posicionSector
                     break
-            _calculoEnergiaConsumida += _pais.listaSectores[_posicionSectorAsistido].energiaConsumida()
+            _plantasAsistidasSector = 0
+            for _planta in _pais.listaPlantas:
+                if(_sector.id in _planta.listaIDSectoresAsistidos):
+                    _plantasAsistidasSector +=1
+            _energiaConsumidaSector = _pais.listaSectores[_posicionSectorAsistido].energiaConsumida()
+            _calculoEnergiaConsumida += (_energiaConsumidaSector/_plantasAsistidasSector)
         # calculo la suma de energia consumida en cada uno de los sectores asistidos 
         return _calculoEnergiaConsumida
 
 class cliente:
     def __init__(self):
-        self.consumo = random.randint(1,3)
-        self.id = uuid.uuid4()
+        self.consumo = random.randint(3,5)
+        self.id = str(uuid.uuid4().hex)
 
 class edificacion:
     def __init__(self):
         self.listaClientes = []
-        for i in range(random.randint(1,20)):
+        for _ in range(random.randint(1,20)):
             self.listaClientes.append(cliente())
 
 class transformador:
     def __init__(self):
         self.listaEdificaciones = []
-        for i in range(random.randint(10,12)):
+        for _ in range(random.randint(10,12)):
             self.listaEdificaciones.append(edificacion())
 
 class sector:
     def __init__(self, _mapaSector):
         self.mapaSector = _mapaSector
-        self.id = uuid.uuid4()
-        self.posicion = (random.randint(0,7000), random.randint(0,7000))
+        self.id = str(uuid.uuid4().hex)
         self.listaTransformadores = []
-        for i in range(random.randint(10,15)):
+        for _ in range(random.randint(10,15)):
             self.listaTransformadores.append(transformador())
 
     def tieneEnergia(self, _listaPlantas):
-        # saber _posicionPlanta
         for _planta in _listaPlantas:
-            _coordenadasPlanta = _planta.posicion
-            _coordernadasSector = self.posicion
-            _diferenciaPosiciones = math.sqrt( (_coordenadasPlanta.x - _coordernadasSector[0])**2 + (_coordenadasPlanta.y - _coordernadasSector[1])**2 )
-            return _diferenciaPosiciones <= 2500
-        
+            if(self.id in _planta.listaIDSectoresAsistidos):
+                return True
+        return False
+
     def energiaRecibida(self, _listaPlantas):
         _acometidaSector = 0
         for _planta in _listaPlantas:
-            if(_planta.cantidadSectores() != 0):
-                _acometidaSector += _planta.energiaGenerada() / _planta.cantidadSectores()
-            else:
-                _acometidaSector += 0
+            if(self.id in _planta.listaIDSectoresAsistidos):
+                if(_planta.cantidadSectoresAsistidos() != 0):
+                    _acometidaSector += _planta.energiaGenerada() / _planta.cantidadSectoresAsistidos()
+                else:
+                    _acometidaSector += 0
         return _acometidaSector
 
     def energiaConsumida(self):
@@ -153,19 +173,12 @@ class sector:
         return _consumoEnergia
 
     def energiaPorTransformador(self):
-        _consumoEnergiaTransformador = 0 
-        for _transformador in self.listaTransformadores:
-            for _edificacion in _transformador.listaEdificaciones:
-                for _cliente in _edificacion.listaClientes:
-                    _consumoEnergiaTransformador += _cliente.consumo
-        _consumoEnergiaTransformador = _consumoEnergiaTransformador / len(self.listaTransformadores)   
-
-        return _consumoEnergiaTransformador
+        return self.energiaConsumida() / len(self.listaTransformadores)
 
     def numeroEdificaciones(self):
         _cantidadEdificaciones = 0
         for _transformador in self.listaTransformadores:
-            _cantidadEdificaciones = len(_transformador.listaEdificaciones)
+            _cantidadEdificaciones += len(_transformador.listaEdificaciones)
         return _cantidadEdificaciones
 
     def numeroClientes(self):
@@ -173,39 +186,21 @@ class sector:
         for _transformador in self.listaTransformadores:
             for _edificacion in _transformador.listaEdificaciones:
                 _cantidadClientes += len(_edificacion.listaClientes)
-                break
         return _cantidadClientes
 
     def energiaConsumidaCliente(self):
-        _consumoEnergiaCliente = 0 
-        for _transformador in self.listaTransformadores:
-            for _edificacion in _transformador.listaEdificaciones:
-                for _cliente in _edificacion.listaClientes:
-                    _consumoEnergiaCliente += _cliente.consumo
-        _consumoEnergiaCliente = _consumoEnergiaCliente / self.numeroClientes() 
-        return _consumoEnergiaCliente
+        return self.energiaConsumida() / self.numeroClientes() 
 
     def energiaConsumidaEdificacion(self):
-        _consumoEnergiaEdificacion = 0 
-        for _transformador in self.listaTransformadores:
-            for _edificacion in _transformador.listaEdificaciones:
-                for _cliente in _edificacion.listaClientes:
-                    _consumoEnergiaEdificacion += _cliente.consumo
-        _consumoEnergiaEdificacion = _consumoEnergiaEdificacion / len(_transformador.listaEdificaciones) 
-        return _consumoEnergiaEdificacion
+        return self.energiaConsumida() / self.numeroEdificaciones()
         
 class pais:
     def __init__(self, _mapaPais):
         self.mapaPais = _mapaPais
-        self.listaSectores = []
         _numeroSectores = random.randint(20,30)
         _splitPolys = polyHandler.splitPolygon(_mapaPais, _numeroSectores)
-        polyHandler.paintPoligons(_splitPolys)
-        for i in range(_numeroSectores):
-            self.listaSectores.append(sector(_splitPolys[i]))
-        self.listaPlantas = []
-        for i in range(random.randint(2,4)):
-            self.listaPlantas.append(planta(self.listaSectores, _mapaPais))
+        self.listaSectores = [ sector(_splitPolys[i])  for i in range(_numeroSectores)]
+        self.listaPlantas = [planta(self.listaSectores, _mapaPais) for _ in range(random.randint(2,4))]
 
     def energiaProducida(self):
         _calculoEnergiaProducida = 0
@@ -220,8 +215,7 @@ class pais:
         return _calculoEnergiaConsumida
          
     def deltaEnergia(self):
-        _calculoDeltaEnergia = self.energiaProducida() - self.energiaConsumida()
-        return _calculoDeltaEnergia
+        return self.energiaProducida() - self.energiaConsumida()
 
     def numeroClientes(self):
         _calculoNumeroClientes = 0
@@ -265,3 +259,4 @@ class pais:
 _mapaPais = polyHandler.generatePolygon()
 cec = compañiaElectrica(_mapaPais)
 cec.generarReporte()
+cec.generarMapa()
