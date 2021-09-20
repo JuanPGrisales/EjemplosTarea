@@ -70,7 +70,27 @@ def randomPolygon(_numberVertices):
 
 
 
+def kmeans(_points, _numberSectors):
+    pointsArray = np.array(_points)
+    numberPoints = len(pointsArray)
+    iterations = 3
+    pointsSector = np.zeros(numberPoints)
 
+    for t in range(iterations):
+        if t == 0:
+            index_ = np.random.choice(range(numberPoints), _numberSectors, replace=False)
+            mean = pointsArray[index_]
+        else:
+            for k in range(_numberSectors):
+                mean[k] = np.mean(pointsArray[pointsSector==k], axis=0)
+        for i in range(numberPoints):
+            dist = np.sum((mean - pointsArray[i])**2, axis=1)
+            pred = np.argmin(dist)
+            pointsSector[i] = pred
+
+    if(_TRACE):
+        drawObjects(pointsSector)
+    return pointsSector
 
 def generatePolygonPoint(_polygon):
     minx, miny, maxx, maxy = _polygon.bounds
@@ -93,6 +113,7 @@ def splitPolygon(_polygon, _numberSectors):
     polygonPoints = generatePolygonPoints(_polygon, numberPoints)
 
     # run k-means clustering for the random points using the number of sectors as the amount of clusters
+    pointsSectors = kmeans(polygonPoints, _numberSectors)
 
     # find the center of each cluster of points
 
