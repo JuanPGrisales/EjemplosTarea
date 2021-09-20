@@ -1,73 +1,170 @@
 import random, math
-from shapely.geometry import Polygon, Point, MultiPoint
-import PIL.ImageDraw as ImageDraw
-import PIL.Image as Image
 import numpy as np
 import matplotlib.pyplot as plt
+from shapely.geometry import Polygon, Point, MultiPoint, point
 from scipy.spatial import Voronoi
-steps = False
 
-def get_random_point_in_polygon(p):
-    poly = Polygon(p)
-    minx, miny, maxx, maxy = poly.bounds
+_TRACE = False
+
+def clip(x, min, max):
+    if(min > max):
+        return x
+    elif(x < min):
+        return min
+    elif(x > max):
+        return max
+    return x
+
+def randomPolygon(_numberVertices):
+    points = []
+    while(True):
+        try:
+            points = []
+            # variables
+            averageRadius = 0.5
+            numberVertices = _numberVertices
+            polygonCenter = Point(0, 0)
+            irregularity = 0.5
+            spikeyness = 0.5
+            irregularity = clip(irregularity, 0, 1) * 2 * math.pi / numberVertices
+            spikeyness = clip(spikeyness, 0, 1) * averageRadius
+
+            # generate n angle steps
+            angleSteps = []
+            lower = (2 * math.pi / numberVertices) - irregularity
+            upper = (2 * math.pi / numberVertices) + irregularity
+            sum = 0
+            for i in range(numberVertices):
+                tmp = random.uniform(lower, upper)
+                angleSteps.append(tmp)
+                sum = sum + tmp
+
+            # normalize the steps so that point 0 and point n+1 are the same
+            k = sum / (2 * math.pi)
+            for i in range(numberVertices):
+                angleSteps[i] = angleSteps[i] / k
+
+            # now generate the points
+            angle = random.uniform(0, 2 * math.pi)
+            for i in range(numberVertices):
+                r_i = clip( random.gauss(averageRadius, spikeyness), 0, 2 * averageRadius)
+                x = polygonCenter.x + r_i * math.cos(angle)
+                y = polygonCenter.y + r_i * math.sin(angle)
+                points.append((x, y))
+                angle = angle + angleSteps[i]
+            _split = splitPolygon(Polygon(points),20)
+            break
+        except:
+            pass
+    return Polygon(points)
+
+def kmeans(_points, _numberSectors):
+    pointsList = [[point.x,point.y] for point in _points]
+    pointsArray = np.array(pointsList)
+    numberPoints = len(pointsArray)
+    iterations = 3
+    pointsSector = np.zeros(numberPoints)
+
+    for t in range(iterations):
+        if t == 0:
+            index_ = np.random.choice(range(numberPoints), _numberSectors, replace=False)
+            mean = pointsArray[index_]
+        else:
+            for k in range(_numberSectors):
+                mean[k] = np.mean(pointsArray[pointsSector==k], axis=0)
+        for i in range(numberPoints):
+            dist = np.sum((mean - pointsArray[i])**2, axis=1)
+            pred = np.argmin(dist)
+            pointsSector[i] = pred
+    sectors = [[] for _ in range(_numberSectors)]
+    for index, sector in enumerate(pointsSector):
+        sectors[int(sector)].append(_points[index])
+    return sectors
+
+def generatePolygonPoint(_polygon):
+    minx, miny, maxx, maxy = _polygon.bounds
     while True:
         p = Point(random.uniform(minx, maxx), random.uniform(miny, maxy))
-        if poly.contains(p):
+        if _polygon.contains(p):
             return p
 
-def generatePolygon(aveRadius=50,numVerts=20, ctrX=0, ctrY=0, irregularity=0.5, spikeyness=0.5) :
-    irregularity = clip( irregularity, 0,1 ) * 2*math.pi / numVerts
-    spikeyness = clip( spikeyness, 0,1 ) * aveRadius
+def generatePolygonPoints(_polygon, _numberPoints):
+    _points = []
+    for _ in range(int(_numberPoints)):
+        _points.append(generatePolygonPoint(_polygon))
+    return _points
 
-    # generate n angle steps
-    angleSteps = []
-    lower = (2*math.pi / numVerts) - irregularity
-    upper = (2*math.pi / numVerts) + irregularity
-    sum = 0
-    for i in range(numVerts) :
-        tmp = random.uniform(lower, upper)
-        angleSteps.append( tmp )
-        sum = sum + tmp
+def splitPolygon(_polygon, _numberSectors):
+    plt.cla()
+    if(_TRACE):
+        x = _polygon.exterior.coords.xy[0]
+        y = _polygon.exterior.coords.xy[1]
+        plt.plot(x, y)
+    # create random points inside the polygon
+    numberPoints = _polygon.area * 10000
+    polygonPoints = generatePolygonPoints(_polygon, numberPoints)
 
-    # normalize the steps so that point 0 and point n+1 are the same
-    k = sum / (2*math.pi)
-    for i in range(numVerts) :
-        angleSteps[i] = angleSteps[i] / k
+    # run k-means clustering for the random points using the number of sectors as the amount of clusters
+    pointsSectors = kmeans(polygonPoints, _numberSectors)
+    if(_TRACE):
+        for sector in pointsSectors:
+            x = [p.x for p in sector]
+            y = [p.y for p in sector]
+            plt.scatter(x, y)
 
-    # now generate the points
-    points = []
-    angle = random.uniform(0, 2*math.pi)
-    for i in range(numVerts) :
-        r_i = clip( random.gauss(aveRadius, spikeyness), 0, 2*aveRadius )
-        x = ctrX + r_i*math.cos(angle)
-        y = ctrY + r_i*math.sin(angle)
-        points.append( (int(x),int(y)) )
+    # find the center of each cluster of points
+    centers = [findCenter(sector) for sector in pointsSectors]
+    if(_TRACE):
+        x = [p.x for p in centers]
+        y = [p.y for p in centers]
+        plt.scatter(x, y)
 
-        angle = angle + angleSteps[i]
+    # find the voronoi polygons for the centroids
+    voronoi = Voronoi(np.array([[p.x,p.y] for p in centers]))
+    regions = voronoi_finite_polygons_2d(voronoi)
 
-    return points
 
-def clip(x, min, max) :
-    if( min > max ) :  return x    
-    elif( x < min ) :  return min
-    elif( x > max ) :  return max
-    else :             return x
+    # find the minimum bounding box around the polygon
+    box = _polygon.minimum_rotated_rectangle
+    if(_TRACE):
+        x = box.exterior.coords.xy[0]
+        y = box.exterior.coords.xy[1]
+        plt.plot(x, y)
+        
 
-def paintPoligons(polys):
-    for poly in polys:
-        xs = Polygon(poly).exterior.coords.xy[0]
-        ys = Polygon(poly).exterior.coords.xy[1]
-        plt.plot(xs,ys)
-    plt.show()
+    # find the intersection between the veronoi polygons and the minimum bounding box
+    subRegions = []
+    for region in regions:
+        intersectPoly = region.intersection(box)
+        subRegions.append(intersectPoly)
+        if(_TRACE):
+            x = intersectPoly.exterior.coords.xy[0]
+            y = intersectPoly.exterior.coords.xy[1]
+            plt.plot(x, y)
 
-def fillWithPoints(poly, points):
-    _list = []
-    for i in range(points):
-        pnt = get_random_point_in_polygon(poly)
-        _list.append([pnt.x,pnt.y])
-    return _list
+    # find the intersection between the original polygon and voronoi polygons to find the sectors
 
-def voronoi_finite_polygons_2d(vor, radius=None):
+    finalRegions = []
+    for region in subRegions:
+        intersectPoly = region.intersection(_polygon)
+        finalRegions.append(intersectPoly)
+        if(_TRACE):
+            x = intersectPoly.exterior.coords.xy[0]
+            y = intersectPoly.exterior.coords.xy[1]
+            plt.plot(x, y)
+
+    if(_TRACE):
+        plt.show()
+        plt.cla()
+
+    for region in finalRegions: # try break it
+        x = region.exterior.coords.xy[0]
+        y = region.exterior.coords.xy[1]
+
+    return finalRegions
+
+
+def voronoi_finite_polygons_2d(vor, radius=1000):
     """
     Reconstruct infinite voronoi regions in a 2D diagram to finite
     regions.
@@ -145,135 +242,52 @@ def voronoi_finite_polygons_2d(vor, radius=None):
         # finish
         new_regions.append(new_region.tolist())
 
-    return new_regions, np.asarray(new_vertices)
+    vertices = np.asarray(new_vertices)
+    regs = []
+    for region in new_regions:
+        regs.append(Polygon(vertices[region]))
+    return regs
 
-def splitPolygon(verts, num_cluster, diameter=100):
+def findCenter(_sector):
+        _x = [p.x for p in _sector]
+        _y = [p.y for p in _sector]
+        centroid = Point(sum(_x) / len(_x), sum(_y) / len(_y))
+        return centroid
 
-    points = fillWithPoints(verts, diameter**2)
-    DIM = 2
-    N = len(points)
-    iterations = 3
+def drawObjects(_objects):
+    for object in _objects:
+        if(type(object).__name__ == "Polygon"):
+            x = object.exterior.coords.xy[0]
+            y = object.exterior.coords.xy[1]
+            plt.plot(x, y)
+        elif(type(object).__name__ == "Point"):
+            plt.plot(object.x, object.y, 'ro')
+        elif(type(object).__name__ == "List"):
+            for object2 in _objects:
+                if(type(object2).__name__ == "Polygon"):
+                    x = object2.exterior.coords.xy[0]
+                    y = object2.exterior.coords.xy[1]
+                    plt.plot(x, y)
+                elif(type(object2).__name__ == "Point"):
+                    plt.plot(object2.x, object2.y, 'ro')
+    plt.show()
 
-    x =  np.array(points)
-    y = np.zeros(N)
-    # initialize clusters by picking num_cluster random points
-    # could improve on this by deliberately choosing most different points
-    for t in range(iterations):
-        if t == 0:
-            index_ = np.random.choice(range(N),num_cluster,replace=False)
-            mean = x[index_]
-        else:
-            for k in range(num_cluster):
-                mean[k] = np.mean(x[y==k], axis=0)
-        for i in range(N):
-            dist = np.sum((mean - x[i])**2, axis=1)
-            pred = np.argmin(dist)
-            y[i] = pred
-
-    for k in range(num_cluster):
-        if(steps):
-            fig = plt.scatter(x[y==k,0], x[y==k,1])
-
-
-    full = verts.append(tuple(verts[0]))
-    xs, ys = zip(*verts) #create lists of x and y values
-
-
-    if(steps):
-        plt.plot(xs,ys,'b') 
-
-    _clusterPoints = [[] for _ in range(num_cluster)]
-    _clusterCenters = [(0,0) for _ in range(num_cluster)]
-    for i, _point in enumerate(x):
-        _clusterPoints[int(y[i])].append(_point)
-    for i in range(num_cluster):
-        _x = [p[0] for p in _clusterPoints[i]]
-        _y = [p[1] for p in _clusterPoints[i]]
-        centroid = (sum(_x) / len(_x), sum(_y) / len(_y))
-        _clusterCenters[i] = centroid
-        if(steps):
-            plt.plot(centroid[0],centroid[1],'yx') 
-
-
-
-
-
-
-
-    points = np.array(_clusterCenters)
-
-    vor = Voronoi(points)
-
-    regions, vertices = voronoi_finite_polygons_2d(vor,diameter*1.4)
-
-    pts = MultiPoint([Point(i) for i in points])
-    mask = pts.convex_hull
-    new_vertices = []
-    finalRegions = []
-    for region in regions:
-        polygon = vertices[region]
-        #shape = list(polygon.shape)
-        #shape[0] += 1
-        #p = Polygon(np.append(polygon, polygon[0]).reshape(*shape)).intersection(mask)
-        #poly = np.array(list(zip(p.boundary.coords.xy[0][:-1], p.boundary.coords.xy[1][:-1])))
-        #new_vertices.append(poly)
-        if(steps):
-            plt.fill(*zip(*polygon), alpha=0.4)
-        ###############find intersection
-        _sectionAreaPoly = polygon
-        _fullPoly = np.array([list(x) for x in verts])
-
-
-
-
-        p = Polygon(_sectionAreaPoly)
-        q = Polygon(_fullPoly)
-        x = p.intersection(q)
-        intersectPoly = x
-
-
-
-        if(steps):
-            xs = intersectPoly.exterior.coords.xy[0]
-            ys = intersectPoly.exterior.coords.xy[1]
-            plt.plot(xs,ys) 
-
-
-
-        finalRegions.append(intersectPoly)
-        
-
-    if(steps):
-        plt.plot(points[:,0], points[:,1], 'ko')
-    return finalRegions
-
-
-
-
-#polyMap = generatePolygon()
-#splitPolys = splitPolygon(polyMap, 4)
-#paintPoligons(splitPolys)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#paintPoligon(verts, points)
+# Start
+# numberVertices = 20
+# polygon = randomPolygon(numberVertices)
+# numberSectors = 5
+# polygonSectors = []
+# 
+# while(True):
+#     try:
+#         polygonSectors = splitPolygon(polygon, numberSectors)
+#         break
+#     except:
+#         pass
+# 
+# for region in polygonSectors:
+#     x = region.exterior.coords.xy[0]
+#     y = region.exterior.coords.xy[1]
+#     plt.plot(x, y)
+# plt.show()
+# End

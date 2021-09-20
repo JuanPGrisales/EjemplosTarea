@@ -81,13 +81,13 @@ class compañiaElectrica:
 class planta:
     def __init__(self, _listaSectores, _mapaPais):
         self.id = str(uuid.uuid4().hex)
-        self.posicion = polyHandler.get_random_point_in_polygon(_mapaPais) #para que sirva con poligono, se debe generar punto aleatorio dentro del poligono
+        self.posicion = polyHandler.generatePolygonPoint(_mapaPais) #para que sirva con poligono, se debe generar punto aleatorio dentro del poligono
         self.listaIDSectoresAsistidos = []
         for _sector in _listaSectores:
             _coordenadasPlanta = self.posicion
             _coordernadasSector = _sector.mapaSector.centroid
             _diferenciaPosiciones = math.sqrt( (_coordenadasPlanta.x - _coordernadasSector.x)**2 + (_coordenadasPlanta.y - _coordernadasSector.y)**2 )
-            if (_diferenciaPosiciones <= 25): # si esta a 2500 km de planta
+            if (_diferenciaPosiciones <= .25): # si esta a 2500 km de planta
                 self.listaIDSectoresAsistidos.append(_sector.id) # agregar id sector a lista id sectores asistidos
         _tipos = ('HidroElectrica', 'Eolica', 'Solar')
         self.tipo = random.choice(_tipos)
@@ -256,7 +256,7 @@ class pais:
      
 
 #comienzo
-_mapaPais = polyHandler.generatePolygon()
+_mapaPais = polyHandler.randomPolygon(20)
 cec = compañiaElectrica(_mapaPais)
 cec.generarReporte()
 cec.generarMapa()
