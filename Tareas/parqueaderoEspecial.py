@@ -11,6 +11,7 @@ class parqueadero:
 
     def generarVehiculos(self,_numeroVehiculos):
         for i in range(_numeroVehiculos):
+            random.seed(1)
             _tipoVehiculo = random.choice(['moto','carro'])
             if(_tipoVehiculo == 'moto'):
                 if(len(self.listaMotos) < 50):
