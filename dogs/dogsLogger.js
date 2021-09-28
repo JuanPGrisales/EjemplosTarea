@@ -1,5 +1,4 @@
 $(document).ready(function () {
-  let myDogLogger = new dogLogger();
   refreshDogTable();
 
   $("#buttonADD").click(function () {
@@ -11,14 +10,36 @@ $(document).ready(function () {
     let nameDog = $("#nameInput").val();
     let raceDog = $("#raceInput").val();
     let ageDog = $("#ageInput").val();
-    myDogLogger.saveDog(new dog(nameDog, raceDog, ageDog));
-    $("#addNewLogger").css("display", "none");
-    $("#dogLogger").css("display", "flex");
-    refreshDogTable();
+
+    let dog = {
+      name: nameDog,
+      race: raceDog,
+      age: ageDog,
+    };
+
+    var http = new XMLHttpRequest();
+    var url = "http://localhost:3000/saveDog";
+    http.open("POST", url, true);
+    //Send the proper header information along with the request
+    http.setRequestHeader("Content-type", "application/json");
+
+    http.onreadystatechange = function () {
+      if (http.readyState === 4 && http.status === 200) {
+        $("#addNewLogger").css("display", "none");
+        $("#dogLogger").css("display", "flex");
+        refreshDogTable();
+      }
+    };
+
+    http.send(JSON.stringify(dog));
   });
 
   function refreshDogTable() {
-    let dogs = myDogLogger.dogs;
+    var http = new XMLHttpRequest();
+    http.open("GET", "http://localhost:3000/dog", false); // false for synchronous request
+    http.send(null);
+    let dogs = JSON.parse(http.responseText);
+
     $("tbody").empty();
     dogs.forEach((dog) => {
       markup = `
