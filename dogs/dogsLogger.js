@@ -36,7 +36,7 @@ $(document).ready(function () {
 
   function refreshDogTable() {
     var http = new XMLHttpRequest();
-    http.open("GET", "http://localhost:3000/dog", false); // false for synchronous request
+    http.open("GET", "http://localhost:3000/dogs", false); // false for synchronous request
     http.send(null);
     let dogs = JSON.parse(http.responseText);
 

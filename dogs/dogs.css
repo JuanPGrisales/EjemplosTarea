@@ -7,9 +7,6 @@ td {
     border: 2px solid black;
 }
 
-td {
-}
-
 #addNewLogger {
     border: 4px solid black;
     display: none;

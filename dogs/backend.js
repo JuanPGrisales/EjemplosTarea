@@ -1,4 +1,3 @@
-
 class dogLogger {
 
     constructor (){
@@ -44,7 +43,7 @@ app.post('/saveDog', jsonParser, (req, res) => {
     res.send("success!")
 })
 
-app.get('/dog', (req, res) => {
+app.get('/dogs', (req, res) => {
     res.send(myDogLogger.dogs)
 })
 
