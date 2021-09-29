@@ -1,0 +1,35 @@
+body,
+html {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color:white;
+  text-align: center;
+ 
+}
+
+.window {
+  background-color:whitesmoke;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fill {
+  width: 400px;
+  height: 80px;
+}
+
+.holderColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.holderRow {
+  display: flex;
+  flex-direction: row;
+}

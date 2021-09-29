@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CATS</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="common.css" />
+    <link rel="stylesheet" href="cats.css" />
+    <script src="catsFrontend.js"></script>
+  </head>
+  <body class="center">
+    <div id="catManager" class="holderColumn window">
+      <div id="title" class="fill center">
+        <h1>CAT MANAGER</h1>
+      </div>
+      <div class="fill center">
+        <table id="tableInfo">
+          <thead>
+            <tr>
+              <th>NAME</th>
+              <th>AGE</th>
+              <th>RACE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>cat name</td>
+              <td>cat age</td>
+              <td>cat race</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="fill center">
+        <button id="buttonAddNew">ADD NEW</button>
+      </div>
+      </div>
+    </div>
+    <div id="catAdder" class="holderColumn window">
+        <div id="title" class="fill center">
+          <h1>CAT ADDER</h1>
+        </div>
+        <div class="fill center holderRow">
+         <h3 id="text">NAME</h3>
+         <input type="text" class="input" id="inputName">
+        </div>
+        <div class="fill center holderRow">
+            <h3 id="text">AGE</h3>
+            <input type="text" class="input" id="inputAge">
+        </div>
+        <div class="fill center holderRow">
+            <h3 id="text">RACE</h3>
+            <input type="text" class="input" id="inputRace">
+        </div>
+        <div class="fill center">
+          <button id="buttonAddCat">ADD CAT</button>
+        </div>
+        </div>
+      </div>
+  </body>
+</html>

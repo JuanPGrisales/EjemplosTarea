@@ -1,0 +1,29 @@
+body {
+  background-image: url("https://cdn.vox-cdn.com/thumbor/UN5ODxKiaiDJjUB2lja1G3yLhx0=/1400x788/filters:format(jpeg)/cdn.vox-cdn.com/uploads/chorus_asset/file/22438301/fake_cats.jpg");
+}
+
+
+#catManager {
+    border:10px outset rgb(51, 88, 255);
+    border-radius:10px;
+}
+
+th, td {
+    border:2px outset rgb(51, 88, 255);;
+}
+
+#catAdder {
+    border:10px outset rgb(51, 88, 255);;
+    border-radius:10px;
+    display:none;
+}
+
+#text{
+    border:2px outset rgb(51, 88, 255);;
+}
+
+.input {
+    width:40%;
+    margin:20px;
+    border:2px outset rgb(51, 88, 255);;
+}
