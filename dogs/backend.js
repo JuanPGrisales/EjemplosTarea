@@ -1,20 +1,7 @@
-class dogLogger {
+let dogsRouter = require("./routes/dogs.js")
+let indexRouter = require("./routes/index.js")
+let saveDogRouter = require("./routes/saveDog.js")
 
-    constructor (){
-        this.dogs = []
-    }
-    saveDog(doge) {
-    this.dogs.push(doge)
-    }
-}
-
-class dog {
- constructor (name, race, age) {
-     this.name = name
-     this.race = race
-     this.age = age
- }
-}
 
 const express = require('express')
 const app = express()
@@ -25,27 +12,14 @@ app.use(cors({
     origin: '*'
 }));
 
-var jsonParser = require('body-parser').json()
+app.use(require('body-parser').json())
 
-let myDogLogger = new dogLogger();
 
-app.get('/', (req, res) => {
-  res.send('Backend DogLogger')
-})
+app.use('/', indexRouter)
 
-app.post('/saveDog', jsonParser, (req, res) => {
+app.use('/saveNewDog', saveDogRouter)
 
-    let name = req.body.name
-    let race = req.body.race
-    let age = req.body.age
-
-    myDogLogger.saveDog(new dog(name, race, age))
-    res.send("success!")
-})
-
-app.get('/dogs', (req, res) => {
-    res.send(myDogLogger.dogs)
-})
+app.use('/dogs', dogsRouter)
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)

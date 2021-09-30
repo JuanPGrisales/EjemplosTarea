@@ -3,6 +3,26 @@
     "axios": "^0.21.4",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
-    "express": "^4.17.1"
-  }
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "express-ejs-layouts": "^2.5.1"
+  },
+  "name": "ejemplo",
+  "version": "1.0.0",
+  "main": "callbacks.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JuanPGrisales/EjemplosTarea.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JuanPGrisales/EjemplosTarea/issues"
+  },
+  "homepage": "https://github.com/JuanPGrisales/EjemplosTarea#readme",
+  "description": ""
 }

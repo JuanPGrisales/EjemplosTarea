@@ -1,4 +1,9 @@
+
+ 
+
 $(document).ready(function () {
+
+
   refreshDogTable();
 
   $("#buttonADD").click(function () {
@@ -18,7 +23,7 @@ $(document).ready(function () {
     };
 
     var http = new XMLHttpRequest();
-    var url = "http://localhost:3000/saveDog";
+    var url = "http://localhost:3000/saveNewDog/";
     http.open("POST", url, true);
     //Send the proper header information along with the request
     http.setRequestHeader("Content-type", "application/json");
@@ -36,7 +41,7 @@ $(document).ready(function () {
 
   function refreshDogTable() {
     var http = new XMLHttpRequest();
-    http.open("GET", "http://localhost:3000/dogs", false); // false for synchronous request
+    http.open("GET", "http://localhost:3000/dogs/", false); // false for synchronous request
     http.send(null);
     let dogs = JSON.parse(http.responseText);
 
